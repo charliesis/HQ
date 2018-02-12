@@ -1,10 +1,20 @@
 const vision = require('@google-cloud/vision');
 
+const unirest = require('unirest');
+
+const image = require('easyimage');
+
+async function getImageInfo(cb){
+    const imageInfo = await image.info('./picture.png');
+    cb(imageInfo);
+}
+
 const client = new vision.ImageAnnotatorClient({
     keyFilename: './gCloudKey.json'
   });
 
-const parameter = 'https://timedotcom.files.wordpress.com/2017/11/171116-trivia-game-win-money-hq-2.png';
+const parameter = './picture.png';
+
 function getText(parameter, cb){
     if(parameter == undefined) return undefined;
     client
@@ -15,7 +25,7 @@ function getText(parameter, cb){
                 const args = detections[0].description.split('\n');
                 var question = '';
                 var answers = [];
-                var startQuestion = false;
+                var startQuestion = true;
                 var startAnswer = false;
                 var nAnswers = 0;
                 args.forEach(element => {
@@ -32,9 +42,6 @@ function getText(parameter, cb){
                             answers.push(question);
                         }
                     }
-                    if(element == 'HO' && !startQuestion){ //Add better detection
-                        startQuestion = true;
-                    }   
                 });
                 answers.forEach(answer =>{
                     console.log(answer);
@@ -87,19 +94,32 @@ let response_handler = function (response) {
         body = JSON.stringify(JSON.parse(body), null, '  ');
         console.log('\nJSON Response:\n');
         var string = JSON.parse(body);
-        console.log(body);
         var number = [0, 0, 0];
         string.webPages.value.forEach(element => {
-            
+            var request = unirest('GET', element.url);
+            request.end(function (result){
+                var string = String(result.raw_body);
+                for(var i = 1; i < 4; i++){
+                    if(string.includes(gQuestion[i]) || string.includes(gQuestion[i].toLowerCase())){
+                        number[i-1]++;
+                        console.log('-------------------------');   
+                        console.log(gQuestion[1] + ": " + number[0]);
+                        console.log(gQuestion[2] + ": " + number[1]);
+                        console.log(gQuestion[3] + ": " + number[2]);
+                    }
+                }
+                
+            });
             for(var i = 1; i < 4; i++){
                 if(element.snippet.includes(gQuestion[i]) || element.snippet.includes(gQuestion[i].toLowerCase())){
                     number[i-1]++;
+                    console.log('-------------------------');   
+                    console.log(gQuestion[1] + ": " + number[0]);
+                    console.log(gQuestion[2] + ": " + number[1]);
+                    console.log(gQuestion[3] + ": " + number[2]);
                 }
             }
-            console.log('-------------------------');   
-            console.log(gQuestion[1] + ": " + number[0]);
-            console.log(gQuestion[2] + ": " + number[1]);
-            console.log(gQuestion[3] + ": " + number[2]);
+           
         })
     });
     response.on('error', function (e) {
@@ -123,15 +143,30 @@ let bing_web_search = function (search) {
 
 
 var gQuestion;
+var imageChanged = false;
+var imageSize = 0;
 
-
-getText(parameter, (question) => {
-    //getSearch(question);
-    gQuestion = question;
-    if (subscriptionKey.length === 32) {
-        bing_web_search(question[0]);
+setInterval(() => {
+    if(imageChanged){
+        console.log('Image changed! Searching online');
+        getText(parameter, (question) => {
+            gQuestion = question;
+            if (subscriptionKey.length === 32) {
+                bing_web_search(question[0]);
+            } else {
+                console.log('Invalid Bing Search API subscription key!');
+                console.log('Please paste yours into the source code.');
+            }
+        });
+        imageChanged = false;
     } else {
-        console.log('Invalid Bing Search API subscription key!');
-        console.log('Please paste yours into the source code.');
+        getImageInfo((info) =>{
+            if(info.size != imageSize){
+                imageSize = info.size;
+                imageChanged = true;
+            }
+        });
     }
-});
+}, 1000)
+
+
