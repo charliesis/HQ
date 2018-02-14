@@ -53,26 +53,6 @@ function getText(parameter, cb){
         });
 }
 
-function getSearch(question){
-    var number = [0, 0 ,0];
-    var request = unirest('GET', 'https://www.googleapis.com/customsearch/v1?key=AIzaSyBb-99K_jEttIhwmRg3qXdUfe2rNA7r6Qg&cx=015138063024239997121:qljuy5-7-cg&q=' + question[0]);
-    request.end(function (result){
-        var string = JSON.parse(result.raw_body);
-        string.items.forEach(element => {
-            for(var i = 1; i < 4; i++){
-                if(element.snippet.includes(question[i])){
-                    number[i-1]++;
-                }
-            }
-            console.log('-------------------------');   
-            console.log(question[1] + ": " + number[0]);
-            console.log(question[2] + ": " + number[1]);
-            console.log(question[3] + ": " + number[2]);
-        });
-    });
-}
-
-
 'use strict';
 
 let https = require('https');
@@ -102,10 +82,11 @@ let response_handler = function (response) {
                 for(var i = 1; i < 4; i++){
                     if(string.includes(gQuestion[i]) || string.includes(gQuestion[i].toLowerCase())){
                         number[i-1]++;
-                        console.log('-------------------------');   
+                           
                         console.log(gQuestion[1] + ": " + number[0]);
                         console.log(gQuestion[2] + ": " + number[1]);
                         console.log(gQuestion[3] + ": " + number[2]);
+                        console.log('-------------------------\t Best : (' + gQuestion[number.indexOf(Math.max.apply(Math, number)) + 1] + ')'); 
                     }
                 }
                 
@@ -113,10 +94,11 @@ let response_handler = function (response) {
             for(var i = 1; i < 4; i++){
                 if(element.snippet.includes(gQuestion[i]) || element.snippet.includes(gQuestion[i].toLowerCase())){
                     number[i-1]++;
-                    console.log('-------------------------');   
+                     
                     console.log(gQuestion[1] + ": " + number[0]);
                     console.log(gQuestion[2] + ": " + number[1]);
                     console.log(gQuestion[3] + ": " + number[2]);
+                    console.log('-------------------------\t Best : (' + gQuestion[number.indexOf(Math.max.apply(Math, number)) + 1] + ')');  
                 }
             }
            
