@@ -2,12 +2,8 @@ const vision = require('@google-cloud/vision');
 
 const unirest = require('unirest');
 
-const image = require('easyimage');
+const fs = require('fs');
 
-async function getImageInfo(cb){
-    const imageInfo = await image.info('./picture.png');
-    cb(imageInfo);
-}
 
 const client = new vision.ImageAnnotatorClient({
     keyFilename: './gCloudKey.json'
@@ -35,7 +31,7 @@ function getText(parameter, cb){
                         nAnswers++;
                     }
                     if(startQuestion){
-                        question += element;
+                        question += element + " ";
                         if(element.includes('?')){
                             startQuestion = false;
                             startAnswer = true;
@@ -128,6 +124,7 @@ var gQuestion;
 var imageChanged = false;
 var imageSize = 0;
 
+console.log('Ready!');
 setInterval(() => {
     if(imageChanged){
         console.log('Image changed! Searching online');
@@ -142,13 +139,10 @@ setInterval(() => {
         });
         imageChanged = false;
     } else {
-        getImageInfo((info) =>{
-            if(info.size != imageSize){
-                imageSize = info.size;
-                imageChanged = true;
-            }
-        });
+        fs.watch('picture.png', function(e){
+            imageChanged = true;
+        })
     }
-}, 1000)
+}, 100)
 
 
